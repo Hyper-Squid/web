@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hyper Store</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b0b0f;color:white;font-family:Arial,sans-serif}
+header{padding:22px 7%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #292930}
+.logo{font-size:25px;font-weight:bold;color:#a78bfa}
+button{cursor:pointer;border:0;border-radius:8px;padding:11px 16px;font-weight:bold}
+header button,.buy{background:#8b5cf6;color:white}
+main{max-width:1100px;margin:auto;padding:40px 20px}
+.hero{padding:35px 0}
+.hero h1{font-size:45px;margin-bottom:10px}
+.hero p{color:#aaa}
+#products{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.card{background:#17171e;border:1px solid #30303a;border-radius:14px;padding:20px}
+.card h3{margin-top:0}
+.price{font-size:23px;font-weight:bold;margin:18px 0}
+.stock{color:#aaa;font-size:14px}
+.buy{width:100%}
+.buy:disabled{background:#444;cursor:not-allowed}
+#cart{margin-top:40px;padding:24px;background:#17171e;border-radius:14px}
+#cart p{color:#ccc}
+input{padding:11px;border-radius:7px;border:1px solid #444;background:#101015;color:white;width:100%;margin:6px 0}
+footer{text-align:center;padding:30px;color:#777}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">HYPER STORE</div>
+  <button onclick="document.getElementById('cart').scrollIntoView()">Košík (<span id="count">0</span>)</button>
+</header>
+
+<main>
+<section class="hero">
+<h1>Objav svoj nový nákup.</h1>
+<p>Moderný obchod. Jednoduchý nákup.</p>
+</section>
+
+<h2>Naše produkty</h2>
+<div id="products"></div>
+
+<section id="cart">
+<h2>Tvoj košík</h2>
+<div id="cartItems">Košík je prázdny.</div>
+<h3>Spolu: <span id="total">0.00</span> €</h3>
+<input id="coupon" placeholder="Zľavový kód">
+<button class="buy" onclick="applyCoupon()">Použiť kupón</button>
+<p id="couponMessage"></p>
+<button class="buy" onclick="checkout()">Objednať</button>
+<p id="message"></p>
+</section>
+</main>
+
+<footer>© 2026 Hyper Store</footer>
+
+<script>
+let products = [
+ {id:1,name:"Jablko",price:0.50,stock:10},
+ {id:2,name:"Banán",price:0.80,stock:8},
+ {id:3,name:"Slúchadlá",price:19.99,stock:5},
+ {id:4,name:"Klávesnica",price:29.99,stock:3},
+ {id:5,name:"Myš",price:14.99,stock:6},
+ {id:6,name:"Tričko",price:12.99,stock:4}
+];
+
+let cart = [];
+let discount = false;
+
+function renderProducts(){
+ const area=document.getElementById("products");
+ area.innerHTML="";
+ products.forEach(p=>{
+  area.innerHTML+=`
+  <div class="card">
+   <h3>${p.name}</h3>
+   <div class="price">${p.price.toFixed(2)} €</div>
+   <p class="stock">${p.stock>0?"Skladom: "+p.stock:"Vypredané"}</p>
+   <button class="buy" ${p.stock===0?"disabled":""}
+    onclick="addToCart(${p.id})">Pridať do košíka</button>
+  </div>`;
+ });
+}
+
+function addToCart(id){
+ let p=products.find(x=>x.id===id);
+ if(!p||p.stock<1)return;
+ let item=cart.find(x=>x.id===id);
+ if(item)item.qty++;
+ else cart.push({id:p.id,name:p.name,price:p.price,qty:1});
+ p.stock--;
+ renderProducts();
+ renderCart();
+}
+
+function renderCart(){
+ let area=document.getElementById("cartItems");
+ area.innerHTML="";
+ if(cart.length===0)area.textContent="Košík je prázdny.";
+ cart.forEach(item=>{
+  area.innerHTML+=`<p>${item.name} × ${item.qty} — ${(item.price*item.qty).toFixed(2)} €
+  <button onclick="removeItem(${item.id})">Odobrať</button></p>`;
+ });
+ let total=cart.reduce((s,x)=>s+x.price*x.qty,0);
+ if(discount)total*=0.9;
+ document.getElementById("total").textContent=total.toFixed(2);
+ document.getElementById("count").textContent=cart.reduce((s,x)=>s+x.qty,0);
+}
+
+function removeItem(id){
+ let item=cart.find(x=>x.id===id);
+ let p=products.find(x=>x.id===id);
+ if(!item||!p)return;
+ p.stock+=item.qty;
+ cart=cart.filter(x=>x.id!==id);
+ renderProducts();
+ renderCart();
+}
+
+function applyCoupon(){
+ let code=document.getElementById("coupon").value.trim().toUpperCase();
+ let msg=document.getElementById("couponMessage");
+ if(code==="HYPER10"){
+  discount=true;
+  msg.textContent="Kupón aktivovaný: zľava 10 %.";
+ }else{
+  msg.textContent="Neplatný kupón. Skús HYPER10.";
+ }
+ renderCart();
+}
+
+function checkout(){
+ let msg=document.getElementById("message");
+ if(cart.length===0){
+  msg.textContent="Najprv pridaj produkt do košíka.";
+  return;
+ }
+ msg.textContent="Demo objednávka dokončená! Platba zatiaľ nie je zapojená.";
+ cart.forEach(item=>{
+  let p=products.find(x=>x.id===item.id);
+  if(p)p.stock+=item.qty;
+ });
+ cart=[];
+ discount=false;
+ document.getElementById("coupon").value="";
+ document.getElementById("couponMessage").textContent="";
+ renderProducts();
+ renderCart();
+}
+
+renderProducts();
+renderCart();
+</script>
+</body>
+</html>
